@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="description" content="Teleprompter uygulaması – metni okurken ön kamera ile kendinizi kaydedin." />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <title>TelePrompter Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== SETUP SCREEN ===== -->
+  <div id="setup-screen" class="screen active">
+    <div class="setup-card">
+      <div class="logo">
+        <span class="logo-icon">🎬</span>
+        <h1>TelePrompter <span class="pro">Pro</span></h1>
+      </div>
+      <p class="subtitle">Metni oku, kendinizi kaydedin — hepsi tek ekranda.</p>
+
+      <div class="form-group">
+        <label for="script-input">📝 Metninizi buraya yapıştırın</label>
+        <textarea id="script-input" placeholder="Okunacak metni buraya yazın veya yapıştırın...
+Örnek: Merhaba, bugün sizinle çok önemli bir konuyu paylaşacağım..."></textarea>
+      </div>
+
+      <div class="settings-row">
+        <div class="setting-item">
+          <label for="font-size-setup">Yazı Boyutu</label>
+          <div class="slider-wrap">
+            <input type="range" id="font-size-setup" min="20" max="80" value="40" />
+            <span id="font-size-val">40px</span>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <label for="speed-setup">Kaydırma Hızı</label>
+          <div class="slider-wrap">
+            <input type="range" id="speed-setup" min="1" max="10" value="3" />
+            <span id="speed-val">3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="setting-item">
+          <label for="theme-setup">Tema</label>
+          <select id="theme-setup">
+            <option value="dark">🌑 Koyu (Önerilen)</option>
+            <option value="light">☀️ Açık</option>
+            <option value="green">🟢 Yeşil Ekran</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <label>Kamera</label>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="camera-toggle" checked />
+              <span class="slider-toggle"></span>
+            </label>
+            <span id="camera-toggle-label">Açık</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="start-btn" class="btn-primary">
+        <span>▶ Başlat</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== TELEPROMPTER SCREEN ===== -->
+  <div id="prompter-screen" class="screen">
+
+    <!-- Camera preview (PiP style) -->
+    <div id="camera-pip" class="camera-pip">
+      <video id="camera-video" autoplay muted playsinline></video>
+      <div id="rec-badge" class="rec-badge hidden">⏺ REC</div>
+      <div id="camera-error" class="camera-error hidden">
+        <span class="cam-err-icon">📵</span>
+        <span class="cam-err-text" id="cam-err-text">Kamera izni gerekli</span>
+        <button class="cam-retry-btn" id="cam-retry-btn">↺ Tekrar Dene</button>
+        <span class="cam-err-hint">🔒 Adres çubuğu → İzinler → Kamera: İzin Ver</span>
+      </div>
+    </div>
+
+    <!-- Controls overlay -->
+    <div id="controls-bar" class="controls-bar">
+      <button id="back-btn" class="ctrl-btn" title="Geri">⬅</button>
+      <button id="play-pause-btn" class="ctrl-btn play-btn" title="Oynat / Duraklat">▶</button>
+      <button id="record-btn" class="ctrl-btn rec-btn" title="Kayıt Başlat / Durdur">⏺</button>
+      <button id="restart-btn" class="ctrl-btn" title="Başa Al">↩</button>
+      <button id="fullscreen-btn" class="ctrl-btn" title="Tam Ekran">⛶</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div id="progress-bar-wrap">
+      <div id="progress-bar"></div>
+    </div>
+
+    <!-- Scrolling text -->
+    <div id="prompter-viewport">
+      <div id="prompter-text"></div>
+    </div>
+
+    <!-- Speed control overlay (shows on long press) -->
+    <div id="speed-overlay" class="speed-overlay hidden">
+      <div class="speed-panel">
+        <span>Hız</span>
+        <input type="range" id="speed-runtime" min="1" max="10" value="3" />
+        <span id="speed-runtime-val">3</span>
+      </div>
+    </div>
+
+    <!-- Countdown toast -->
+    <div id="countdown-toast" class="countdown-toast hidden">
+      <span class="countdown-num" id="countdown-num">2</span>
+      <span class="countdown-label">saniye içinde başlıyor…</span>
+    </div>
+
+    <!-- START overlay — teleprompter ekranında büyük başlat butonu -->
+    <div id="start-overlay">
+      <div class="start-overlay-content">
+        <p class="start-hint">📷 Kameranıza bakın, hazır olunca başlatın</p>
+        <button id="start-scroll-btn" class="start-scroll-btn">
+          ▶
+          <span class="btn-label">BAŞLAT</span>
+        </button>
+        <p class="start-hint-small">veya ekrana dokunun</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Download modal -->
+  <div id="download-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-icon">🎉</div>
+      <h2>Kayıt Tamamlandı!</h2>
+      <p>Videonuz hazır. İndirmek ister misiniz?</p>
+      <div class="modal-btns">
+        <button id="download-btn" class="btn-primary">⬇ İndir</button>
+        <button id="dismiss-btn" class="btn-secondary">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
